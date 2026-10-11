@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">위젯 메모</string>
+    <string name="widget_description">홈 화면에서 메모와 체크리스트를 바로 확인하고 체크하세요</string>
+</resources>
