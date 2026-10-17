@@ -11,7 +11,7 @@
         android:id="@+id/item_check"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="10dp"
         android:layout_marginEnd="12dp"
         android:contentDescription="체크박스" />
 

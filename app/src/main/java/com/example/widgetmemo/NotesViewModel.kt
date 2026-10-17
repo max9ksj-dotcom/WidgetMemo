@@ -38,4 +38,17 @@ class NotesViewModel(app: Application) : AndroidViewModel(app) {
     fun setItemText(id: Long, t: String) = viewModelScope.launch { repo.setItemText(id, t) }
     fun setChecked(id: Long, c: Boolean) = viewModelScope.launch { repo.setChecked(id, c) }
     fun deleteItem(id: Long) = viewModelScope.launch { repo.deleteItem(id) }
+
+    fun addItemAtEnd(memoId: Long, onDone: (Long) -> Unit) = viewModelScope.launch {
+        onDone(repo.addItem(memoId))
+    }
+
+    fun addItemAfter(itemId: Long, onDone: (Long) -> Unit) = viewModelScope.launch {
+        val id = repo.addItemAfter(itemId)
+        if (id > 0) onDone(id)
+    }
+
+    fun deleteItemFocusPrev(itemId: Long, onDone: (Long?) -> Unit) = viewModelScope.launch {
+        onDone(repo.deleteItemReturnPrev(itemId))
+    }
 }

@@ -1,31 +1,26 @@
-# 위젯 메모 (갤럭시용 위젯 메모장)
+# 위젯 메모 (갤럭시용 위젯 메모장) — 2차 개선판
 
 Kotlin + Jetpack Compose + Room + DataStore + App Widget(RemoteViews).
 
+## 2차 개선 내용
+1. **체크리스트 Enter**: Enter(키보드의 다음/엔터)를 누르면 현재 항목 바로 아래에 빈 체크박스 항목이 끼워지고 커서가 이동한다. 항목 사이에 끼워도 뒤 항목의 순서·내용·체크 상태는 유지된다(DB에서 순서를 한 칸씩 밀고 삽입, 한 트랜잭션). 빈 항목에서 Backspace → 그 항목 삭제 후 이전 항목으로 이동. 텍스트 메모의 줄바꿈은 별개.
+2. **소형/중형/대형 위젯**: 위젯 목록에 3종(2x2, 4x2, 4x4). 모두 크기 조절 가능하며, 현재 크기에 따라 콤팩트/일반 레이아웃을 자동 선택. 같은 DB 사용.
+3. **설정 화면**: 글씨 크기(작게~아주 크게 + 제목/본문 슬라이더), 글씨체 6종, 글씨 색상, 글씨 투명도, 위젯 배경 투명도, 미리보기, 기본값 복원. 앱 전체 설정(DataStore)과 위젯별 배경 투명도(위젯을 길게 눌러 ‘설정’)를 분리.
+4. **완료 체크박스**: 검은색으로 채우고 흰 체크(앱·위젯 동일). 미완료는 빈 상자. 완료 글씨는 취소선.
+5. **빈 제목**: ‘제목 없음’ 제거. 앱 목록/편집/위젯/위젯 설정 화면 모두 빈 제목은 빈 채로(제목 줄 생략).
+6. **UI**: 미니멀 목록(구분선·진행 막대), 편집 화면, 설정 화면.
+7. **위젯 클릭**: 제목/편집 아이콘/텍스트 메모 본문 → 해당 메모 편집 화면, 체크박스 행 → 앱을 열지 않고 체크만 토글.
+
+## 위젯 클릭 구현 방식
+- 제목·아이콘: `PendingIntent.getActivity` (위젯 ID·메모 ID가 들어간 data URI + requestCode로 위젯마다 구분)
+- 체크박스 행: 목록 템플릿 `PendingIntent.getBroadcast`(명시적 인텐트) + 항목별 fill-in 인텐트 → `ToggleReceiver`가 DB를 직접 갱신 (Activity를 시작하지 않음)
+- MainActivity는 `singleTop` + `onNewIntent`로 이미 실행 중이어도 같은 화면을 쌓지 않고 해당 메모만 연다. 없는 메모는 목록으로 복귀.
+
 ## 빌드
-1. Android Studio(Koala 이상 권장, JDK 17)에서 이 폴더를 연다. Gradle 동기화가 끝나면 자동으로 래퍼가 준비된다.
-2. 휴대폰 연결 후 Run, 또는 메뉴 Build > Build APK(s).
-   CLI: Gradle 8.7 설치 후 `gradle wrapper` 한 번 실행 → `./gradlew assembleDebug`
-   결과물: app/build/outputs/apk/debug/app-debug.apk
+Android Studio에서 폴더를 열고 Run, 또는 GitHub Actions(.github/workflows/build.yml)로 APK 빌드.
 
-## 갤럭시에 설치
-- 설정 > 휴대전화 정보 > 소프트웨어 정보 > 빌드번호 7번 탭 → 개발자 옵션 > USB 디버깅 켜기 → USB 연결 후 Android Studio에서 Run
-- 또는 app-debug.apk를 휴대폰으로 옮겨 설치(‘출처를 알 수 없는 앱’ 허용 필요)
-
-## 위젯 추가 (One UI)
-홈 화면 빈 곳 길게 누르기 → 위젯 → ‘위젯 메모’ → 홈 화면에 추가 → 표시할 메모 선택.
-위젯을 길게 눌러 ‘설정’을 고르면 메모를 다시 선택할 수 있다.
-
-## 위젯 동작
-- 체크리스트 위젯: 항목 행을 누르면 앱을 열지 않고 바로 체크/해제 (BroadcastReceiver가 DB를 직접 갱신)
-- 제목 또는 ‘+’ 버튼: 앱의 편집 화면으로 이동(‘+’는 새 항목이 추가된 상태로 열림)
-- 위젯 안에서 글자를 직접 타이핑하는 기능은 App Widget 구조상 지원되지 않아 앱 편집 화면으로 연결한다.
-
-## 주요 파일
-app/src/main/java/com/example/widgetmemo/
-- Data.kt — Room 엔티티/DAO/DB (Memo, CheckItem, WidgetBinding)
-- NoteRepository.kt — 앱 쓰기 경로(뮤텍스 직렬화 + 위젯 갱신)
-- MemoWidgetProvider.kt / MemoWidgetService.kt / ToggleReceiver.kt / WidgetUpdater.kt — 위젯
-- WidgetConfigActivity.kt — 위젯별 메모 선택
-- MainActivity.kt, NotesViewModel.kt, Screens.kt, Theme.kt, Settings.kt — 앱 UI
-app/src/androidTest/.../NoteDaoTest.kt — DAO 계측 테스트
+## 한계
+- 위젯 안에서 글자 입력은 불가(App Widget 구조). 편집은 앱으로 이동.
+- 체크리스트 항목은 한 줄 입력(Enter가 새 항목 생성이므로).
+- 글꼴은 시스템 글꼴 계열만 지원하며, 한글은 해당 글꼴에 한글이 없으면 기본 글꼴로 대체될 수 있다.
+- 라이트/다크 전환은 위젯이 다음 갱신 때 반영된다.

@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">위젯 메모</string>
-    <string name="widget_description">홈 화면에서 메모와 체크리스트를 바로 확인하고 체크하세요</string>
+    <string name="widget_label_small">위젯 메모 · 소형</string>
+    <string name="widget_label_medium">위젯 메모 · 중형</string>
+    <string name="widget_label_large">위젯 메모 · 대형</string>
+    <string name="widget_description_small">제목과 핵심 항목만 간단히 보여줍니다</string>
+    <string name="widget_description_medium">여러 항목을 보고 바로 체크합니다</string>
+    <string name="widget_description_large">긴 메모와 많은 항목을 한 번에 보고 체크합니다</string>
 </resources>

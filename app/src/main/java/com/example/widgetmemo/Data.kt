@@ -105,6 +105,16 @@ interface MemoDao {
     @Query("SELECT COUNT(*) FROM check_items WHERE memoId = :memoId AND TRIM(text) <> ''")
     suspend fun countNonBlankItems(memoId: Long): Int
 
+    @Query("SELECT * FROM check_items WHERE id = :id")
+    suspend fun getItem(id: Long): CheckItem?
+
+    /** 항목 사이에 새 줄을 끼워 넣기 위해, 기준 위치 뒤의 항목 순서를 한 칸씩 민다. */
+    @Query("UPDATE check_items SET position = position + 1 WHERE memoId = :memoId AND position > :pos")
+    suspend fun shiftAfter(memoId: Long, pos: Int)
+
+    @Query("SELECT id FROM check_items WHERE memoId = :memoId AND position < :pos ORDER BY position DESC, id DESC LIMIT 1")
+    suspend fun getPrevItemId(memoId: Long, pos: Int): Long?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertBinding(binding: WidgetBinding)
 

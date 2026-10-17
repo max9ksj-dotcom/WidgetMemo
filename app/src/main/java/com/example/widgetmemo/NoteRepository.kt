@@ -1,6 +1,7 @@
 package com.example.widgetmemo
 
 import android.content.Context
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -8,7 +9,8 @@ import kotlinx.coroutines.withContext
 
 /** 앱 쪽 모든 쓰기는 여기를 거친다: 뮤텍스로 순서를 보장하고, 쓰기 후 위젯을 갱신한다. */
 class NoteRepository private constructor(private val app: Context) {
-    private val dao = NoteDb.get(app).dao()
+    private val db = NoteDb.get(app)
+    private val dao = db.dao()
     private val mutex = Mutex()
 
     val memos = dao.observeMemos()
@@ -30,6 +32,28 @@ class NoteRepository private constructor(private val app: Context) {
         val id = dao.insertItem(CheckItem(memoId = memoId, position = pos))
         dao.touch(memoId, now())
         id
+    }
+
+    /** 현재 항목 바로 아래에 빈 항목을 끼워 넣는다. 뒤 항목의 순서는 한 칸씩 밀리고 내용/체크 상태는 그대로다. */
+    suspend fun addItemAfter(itemId: Long): Long = write {
+        db.withTransaction {
+            val cur = dao.getItem(itemId) ?: return@withTransaction -1L
+            dao.shiftAfter(cur.memoId, cur.position)
+            val id = dao.insertItem(CheckItem(memoId = cur.memoId, position = cur.position + 1))
+            dao.touch(cur.memoId, now())
+            id
+        }
+    }
+
+    /** 항목을 지우고, 커서를 옮길 이전 항목의 ID를 돌려준다(없으면 null). */
+    suspend fun deleteItemReturnPrev(itemId: Long): Long? = write {
+        db.withTransaction {
+            val cur = dao.getItem(itemId) ?: return@withTransaction null
+            val prev = dao.getPrevItemId(cur.memoId, cur.position)
+            dao.deleteItem(itemId)
+            dao.touch(cur.memoId, now())
+            prev
+        }
     }
 
     suspend fun setItemText(itemId: Long, text: String) = write {
